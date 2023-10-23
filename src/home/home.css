@@ -1,0 +1,18 @@
+.home {
+    font-family: sans-serif;
+    text-align: center;
+    width: 90%;
+    margin-left: 5%;
+    padding-top: 5%;
+  }
+  .editable-row .ant-form-item-explain {
+    position: absolute;
+    top: 100%;
+    font-size: 12px;
+  }
+  .addBtn{
+    /* margin-top: 3%; */
+    margin-bottom: 1%;
+
+  }
+  
