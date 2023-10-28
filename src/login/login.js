@@ -34,8 +34,9 @@ function Login() {
       </div>
       <Button type="primary" style={{ backgroundColor: '#5134AB', borderRadius: '40px', width: '20%', height: '50px', fontSize: '18px', marginTop: '5%' }}
         onClick={async () => {
+          var userrole=username==='admin'?1:0;
           try {
-            const { user_id, is_manager } = await login({ username, password })
+            const { user_id, is_manager } = await login({username: username, password:password,is_manager:userrole}) 
             if (user_id) {
               navigate('home', { state: { user_id: user_id, is_manager: is_manager, username: username } })
             }
