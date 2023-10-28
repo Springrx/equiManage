@@ -13,14 +13,14 @@
 `cnpm install`
 
 # 开发
-1. 启动 server 服务
-2. 将 src/common/fetch.js 内的 HOST 改成 server host（一般是 http://localhost:7001）
-3. 将 src/app/index.jsx 内 23 行代码注释掉 `window.location.href = '/login.html';`
-4. `npm run dev`
+1. 确认后端 server 服务启动
+2. 确认 src/component/fetch.js axios函数内的url字段(在第10或第11行)值为url，而不是`${HOST}${url}`
+3. 在 package.json 内添加proxy字段："proxy": "http://10.177.44.94:8081"
+4. `npm start`
 
 # 部署
-1.  将 src/common/fetch.js 内的 HOST 改成线上 server host
-2.  将 src/app/index.jsx 内 23 行代码取消注释
+1.  将 src/component/fetch.js axios函数内的url字段修改为`${HOST}${url}`
+2.  删除 package.json 内的proxy字段
 3.  `npm run build`
-4.  将 build 产生的 dist 文件夹里的静态文件进行部署(ydroid 阿里云服务器 /var/www/manage-page 目录下)
+4.  将 build 产生的 dist 文件夹里的静态文件进行部署(ydroid 阿里云服务器 /var/www/userStudy 目录下)
 5.  将代码更新同步到 gitlab 中：`git push origin master`
