@@ -2,7 +2,7 @@ import { userName, pwd } from '../svg';
 import './login.css';
 import { Button, message } from 'antd';
 import { useNavigate } from 'react-router-dom';
-import { Dropbox, PreviewOpen } from '@icon-park/react';
+import { Dropbox } from '@icon-park/react';
 import { useState } from 'react';
 import { login } from './service';
 function Login() {
@@ -23,7 +23,8 @@ function Login() {
             }} style={{ marginLeft: "5%", backgroundColor: '#EFEFEF', border: 'none', outline: 'none' }} />
         </div>
         <div className='inputBox' style={{ marginTop: "8%" }}>
-          {pwd}<input placeholder="密码"
+          {pwd}
+          <input placeholder="密码"
             type="password"
             value={password}
             onChange={(e) => {
@@ -33,12 +34,14 @@ function Login() {
       </div>
       <Button type="primary" style={{ backgroundColor: '#5134AB', borderRadius: '40px', width: '20%', height: '50px', fontSize: '18px', marginTop: '5%' }}
         onClick={async () => {
-          navigate('home', { state: { user_id: 1, is_manager: 1 } })
-          // const {user_id,is_manager}=await login({username,password})
-          //   if(user_id&&is_manager){
-          //   navigate('home',{ state: { user_id:  user_id ,is_manager: is_manager } })
-          // }
-          //   else message.error('用户名或密码错误')
+          try {
+            const { user_id, is_manager } = await login({ username, password })
+            if (user_id) {
+              navigate('home', { state: { user_id: user_id, is_manager: is_manager, username: username } })
+            }
+          } catch (error) {
+            message.error('用户名或密码错误')
+          }
         }}>登录</Button>
 
     </div>

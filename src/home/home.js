@@ -1,10 +1,10 @@
-import { Form, Image, Upload, Badge, DatePicker, Input, InputNumber, Popconfirm, Table, Select, Divider, Space, Row, Col, Tag, Tooltip, Button, message } from 'antd';
+import { Form, Image, Upload, Badge, DatePicker, Input, Popconfirm, Table, Select, Divider, Space, Row, Col, Tag, Tooltip, Button, message } from 'antd';
 import { PlusOutlined } from '@ant-design/icons';
 import { useState, useRef, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import './home.css';
-import { currentUsers, locations, originData, categories } from './config.js';
-import { updateEquipment, addEquipment, uploadPhoto, getEquipmentList, deleteEquipment,getCategoriesList,addCategory } from './service';
+import { state, classfyInput, selectStateOptions } from './config.js';
+import { updateEquipment, getSelectEquipments, addEquipment, uploadPhoto, getLocationsList, getEquipmentList, deleteEquipment, getCategoriesList, addCategory, getUsers, addLocation } from './service';
 import dayjs from 'dayjs';
 
 const { TextArea } = Input;
@@ -14,115 +14,89 @@ const uploadButton = (
     </div>
 );
 
-let index = 0;
 const Home = () => {
     const location = useLocation();
-    const { user_id, is_manager } = location.state;
+    const { user_id, is_manager, username } = location.state;
+    const [newEquipment, setNewEquipment] = useState(0);
     const [form] = Form.useForm();
-    const[categories,setCategories]=useState([]);
-    const getCategories=async()=>{  
-        const categoryList=await getCategoriesList();
-        setCategories(categoryList);
-    };
-    // const [data, setData] = useState(originData);
+    const [categories, setCategories] = useState([]);
+    const [locations, setLocations] = useState([]);
+    const [userFilter, setUserFilter] = useState([]);
     const [data, setData] = useState([]);
     const getEquipments = async (pageNum) => {
         const equipmentList = await getEquipmentList(pageNum);
-        const { records } = equipmentList;
-        records.map((item) => {
-            item.key = item.id;
-            item.receive_time = item.receive_time ? dayjs(item.receive_time) : '';
-            item.buy_time = dayjs(item.buy_time);
-            return item;
-        })
-        setData(records);
+        setData(equipmentList);
     }
+    const getSelectList = async (pageNum, params) => {
+        const equipmentList = await getSelectEquipments(pageNum, params);
+        setData(equipmentList);
+    }
+    const getUserList = async () => {
+        const username = await getUsers();
+        const filter = username.map((item) => { return { text: item, value: item } });
+        setUserFilter(filter);
+    }
+    const getCategories = async () => {
+        const categoryList = await getCategoriesList();
+        const cateArray = categoryList.map((item) => { return item.category });
+        setCategories(cateArray);
+    };
+    const getLocations = async () => {
+        const locationsList = await getLocationsList();
+        const locations = locationsList.map((item) => { return item.location });
+        setLocations(locations);
+    };
     useEffect(() => {
         getEquipments(1);
         getCategories();
+        getLocations();
+        getUserList();
     }, []);
+
     const [page, setPage] = useState(1);
     const [editingKey, setEditingKey] = useState('');
     const [file, setFile] = useState('');
-    const [items, setItems] = useState(['D4006', 'lucy']);
-    const [category, setCategory] = useState('');
-    const[name,setName]=useState('');
-    const inputRef = useRef(null);
-    const onNameChange = (event) => {
-        setName(event.target.value);
-    };
-    const receive = (key) => {
-        debugger
-        const newData = [...data];
-        const index = newData.findIndex((item) => key === item.key);
-        if (index > -1) {
-            const item = newData[index];
-            newData.splice(index, 1, {
-                ...item,
-                user_id: user_id,
-                is_receive: 1,
-                state:'正在使用',
-                receive_time: new Date().toLocaleDateString() + ' ' + new Date().toLocaleTimeString(),
-            });
-            // const updatedEquipment=await updateEquipment(newData[index])
-            // if (updatedEquipment){
-            // setData(newData);
-            // setEditingKey('');}
-            // else 
-            // message.error('领用失败');
-            setData(newData);
-            setEditingKey('');
-        } else {
-            message.error('领用失败');
-        }
-    }
-    const restore=(key)=>{
-        const newData = [...data];
-        const index = newData.findIndex((item) => key === item.key);
-        if (index > -1) {
-            const item = newData[index];
-            newData.splice(index, 1, {
-                ...item,
-                user_id: user_id,
-                is_receive: 0,
-                state:'闲置',
-                receive_time: '',
-            });
-            // const updatedEquipment=await updateEquipment(newData[index])
-            // if (updatedEquipment){
-            // setData(newData);
-            // setEditingKey('');}
-            // else 
-            // message.error('领用失败');
-            setData(newData);
-            setEditingKey('');
-        } else {
-            message.error('领用失败');
-        }
-    }
-    const addItem = (e) => {
-        e.preventDefault();
-        setItems([...items, name || `New item ${index++}`]);
-        setName('');
-        setTimeout(() => {
-            inputRef.current?.focus();
-        }, 0);
-    };
     const [imageUrl, setImgUrl] = useState('');
+    const restore = async (key) => {
+        try {
+            const newData = [...data];
+            const index = newData.findIndex((item) => key === item.key);
+            if (index > -1) {
+                const item = newData[index];
+                item.user_id = 0;
+                item.username = '';
+                item.is_receive = 0;
+                item.state = 0;
+                item.receive_time = '';
+                await updateEquipment({ id: key, ...item })
+            }
+        } catch (error) {
+            message.error('归还失败');
+        } finally {
+            getEquipments(page);
+        }
+    }
+    const receive = async (key) => {
+        try {
+            const newData = [...data];
+            const index = newData.findIndex((item) => key === item.key);
+            if (index > -1) {
+                const item = newData[index];
+                item.user_id = user_id;
+                item.username = username;
+                item.is_receive = 1;
+                item.state = 1;
+                item.receive_time = new Date();
+                await updateEquipment({ id: key, ...item })
+            }
+        } catch (error) {
+            message.error('领用失败');
+        } finally {
+            getEquipments(page);
+        }
+    }
     const isEditing = (record) => {
         return record.key === editingKey;
-    };
-    const onChange = (date, dateString) => {
-        const newData = [...data];
-        const index = newData.findIndex((item) => editingKey === item.key);
-        if (index > -1) {
-            const item = newData[index];
-            newData.splice(index, 1, {
-                ...item,
-                buy_time: date,
-            });
-            setData(newData);
-        }
     };
     const EditableCell = ({
         editing,
@@ -134,6 +108,10 @@ const Home = () => {
         children,
         ...restProps
     }) => {
+        const [newCategory, setNewCategory] = useState('');
+        const ctgInputRef = useRef(null);
+        const [newLocation, setNewLocation] = useState('');
+        const locaInputRef = useRef(null);
         let inputNode = <Input />;
         if (inputType === 'textArea') {
             inputNode = <TextArea autoSize={{ minRows: 4, maxRows: 16 }} />;
@@ -166,10 +144,33 @@ const Home = () => {
                 {imageUrl ? <img src={imageUrl} alt="avatar" style={{ width: '100%' }} /> : uploadButton}
             </Upload>;
         }
+        else if (inputType === 'selectState') {
+            inputNode = <Select
+                defaultValue="闲置"
+                style={{ width: 100, }}
+                options={selectStateOptions.map((item) => ({
+                    label: item.label,
+                    value: item.value,
+                }))}
+            />
+        }
         else if (inputType === 'selectLocation') {
+            const onNameChange = (event) => {
+                setNewLocation(event.target.value);
+            };
+            const addItem = async (e) => {
+                e.preventDefault();
+                if(newLocation==='') return message.error('新位置不能为空');
+                await addLocation({ location: newLocation });
+                getLocations();
+                setNewLocation('');
+                setTimeout(() => {
+                    locaInputRef.current?.focus();
+                }, 0);
+            };
             inputNode = <Select
                 style={{
-                    width: 100,
+                    width: 240,
                 }}
                 placeholder="输入位置"
                 dropdownRender={(menu) => (
@@ -179,8 +180,8 @@ const Home = () => {
                         <Space style={{ padding: '0 8px 4px', }}>
                             <Input
                                 placeholder="输入位置"
-                                ref={inputRef}
-                                value={name}
+                                ref={locaInputRef}
+                                value={newLocation}
                                 onChange={onNameChange}
                             />
                             <Button type="text" icon={<PlusOutlined />} onClick={addItem}>
@@ -189,84 +190,58 @@ const Home = () => {
                         </Space>
                     </>
                 )}
-                options={items.map((item) => ({
+                options={locations.map((item) => ({
                     label: item,
                     value: item,
                 }))}
             />
         }
-        else if (inputType === 'selectState') {
+        else if (inputType === 'selectCategory') {
+            const addItem = async (e) => {
+                e.preventDefault();
+                if(newCategory==='') return message.error('新类别不能为空');
+                await addCategory({ category: newCategory });
+                getCategories();
+                setNewCategory('');
+                setTimeout(() => {
+                    ctgInputRef.current?.focus();
+                }, 0);
+            }
+            const onNameChange = (event) => {
+                setNewCategory(event.target.value);
+            }
             inputNode = <Select
-            defaultValue="闲置"
                 style={{
-                    width: 120,
+                    width: 240,
                 }}
-                // onChange={handleChange}
-                options={[
-                    {
-                        value: 0,
-                        label: '闲置',
-                    },
-                    // {
-                    //     value: '正在使用',
-                    //     label: '正在使用',
-                    // },
-                    {
-                        value: 2,
-                        label: '已报废',
-                    },
-                ]}
+                placeholder="选择类别"
+                dropdownRender={(menu) => (
+                    <>
+                        {menu}
+                        <Divider style={{ margin: '8px 0', }} />
+                        <Space style={{ padding: '0 8px 4px', }}>
+                            <Input
+                                placeholder="输入类别"
+                                ref={ctgInputRef}
+                                value={newCategory}
+                                onChange={onNameChange}
+                                onKeyDown={(e) => e.stopPropagation()}
+                            />
+                            <Button type="text" icon={<PlusOutlined />} onClick={addItem}>
+                                添加类别
+                            </Button>
+                        </Space>
+                    </>
+                )}
+                options={categories.map((item) => ({
+                    label: item,
+                    value: item,
+                }))}
             />
         }
-        else if (inputType === 'selectCategory') {
-            const addCategoryItem =async () => {
-                const newCategory = await addCategory({category:category});
-                console.log(newCategory,'newCategory');
-                // if(newCategory){
-                //     getCategories();
-                //     setCategory('');
-                // }
-                // else message.error('添加失败');
-            }
-            const onCategoryChange = (event) => {      
-                console.log(event.target.value);
-                setCategory(event.target.value);
-            }
-            inputNode = <Select
-            style={{
-                width: 300,
-            }}
-            placeholder="输入类别"
-            dropdownRender={(menu) => (
-                <>
-                    {menu}
-                    <Divider style={{ margin: '8px 0', }} />
-                    <Space style={{ padding: '0 8px 4px', }}>
-                        <Input
-                            placeholder="输入类别"
-                            // ref={inputRef}
-                            value={category}
-                            onChange={onCategoryChange}
-                        />
-                        <Button type="text" icon={<PlusOutlined />} 
-                        onClick={addCategoryItem}
-                        >
-                            添加新类别
-                        </Button>
-                    </Space>
-                </>
-            )}
-            options={['电脑','打印机'].map((item) => ({
-                label: item,
-                value: item,
-            }))}
-        />
-        }
         else if (inputType === 'DatePicker') {
-            inputNode = <DatePicker  onChange={onChange} />
-        }
-        else {
-            inputNode = <InputNumber />;
+            inputNode = <DatePicker 
+            style={{width:125}}/>
         }
         return (
             <td {...restProps}>
@@ -276,12 +251,12 @@ const Home = () => {
                         style={{
                             margin: 0,
                         }}
-                        rules={[
-                            {
-                                required: false,
-                                // message: `请输入${title}!`,
-                            },
-                        ]}
+                        // rules={[
+                        //     {
+                        //         required: true,
+                        //         message: `请输入${title}!`,
+                        //     },
+                        // ]}
                     >
                         {inputNode}
                     </Form.Item>
@@ -291,35 +266,27 @@ const Home = () => {
             </td>
         );
     };
-    const handleAdd =async () => {
+    const handleAdd = async () => {
         if (editingKey === '') {
             const maxKey = Math.max(...data.map(item => item.key));
             const newData = {
-                // key: maxKey + 1,
+                key: maxKey + 1,
                 name: '',
                 category: '',
                 number: '',
                 buy_time: '',
-                
                 state: 0,
                 is_receive: 0,
                 receive_time: '',
-                
                 user_id: 0,
                 username: '',
-                // photo_url: '',
+                photo_url: '',
                 location: '',
                 configuration: ''
             };
-            // setData([...data, newData]);
-            // setEditingKey(newData.key);
-            const newEquipment = await addEquipment(newData);
-            if(newEquipment){
-                getEquipments(page);
-                // setData([...data, newEquipment]);
-                // setEditingKey(newEquipment.key);
-            }
-            else message.error('添加失败');
+            setData([...data, newData]);
+            setEditingKey(newData.key);
+            setNewEquipment(1);
         }
         else {
             message.error('请先保存正在编辑的设备信息');
@@ -333,72 +300,53 @@ const Home = () => {
             ...record,
         });
         setEditingKey(record.key);
-        debugger
     };
     const cancel = () => {
-        debugger
+        if (newEquipment === 1) {
+            setData(data.slice(0, data.length - 1));
+        }
         setImgUrl('');
         setEditingKey('');
+        setNewEquipment(0);
     };
     const save = async (key) => {
         try {
             const row = await form.validateFields();
-            debugger
-            const newData = [...data];
-            const index = newData.findIndex((item) => key === item.key);
-            if (index > -1) {
-                let photo_url;
-                if(imageUrl!==''){
-                    photo_url=await uploadPhoto(file);
-                    setImgUrl('');
+            if (newEquipment === 1) {
+                const newEquiId = await addEquipment({ ...row });
+                if (file !== '') await uploadPhoto(file, newEquiId);
+                setNewEquipment(0);
+            }
+            else {
+                if (file !== '') await uploadPhoto(file, key);
+                if (row.state === 2) {
+                    row.is_receive = 0;
+                    row.receive_time = null;
+                    row.user_id = 0;
+                    row.username = '';
                 }
-                else{
-                    photo_url=newData[index].photo;
-                }
-                const updatedEquipment=await updateEquipment({...newData[index],photo_url:photo_url})
-                if(updatedEquipment){
-                    const item = newData[index];
-                    newData.splice(index, 1, {
-                        ...item,
-                        ...row,
-                    });
-                    setData(newData);
-                    setEditingKey('');
-                }
-            // if (index > -1) {
-            //     const item = newData[index];
-            //     newData.splice(index, 1, {
-            //         ...item,
-            //         ...row,
-            //     });
-            //     console.log(newData.buy_time, 'newData.buy_time');
-            //     setData(newData);
-            //     setEditingKey('');
-            // } else {
-            //     newData.push(row);
-            //     setData(newData);
-            //     setEditingKey('');
-            // }
-        } }catch (errInfo) {
+                await updateEquipment({ id: key, ...row });
+            }
+        } catch (errInfo) {
             console.log('Validate Failed:', errInfo);
+            message.error('修改失败');
+        } finally {
+            getEquipments(page);
+            setEditingKey('');
+            setImgUrl('');
         }
     };
     async function del(key) {
-        const is_del = await deleteEquipment (key);
-        if(is_del){
-            const equiList = await getEquipmentList(page);
-            setData(equiList);
-        }
-        else 
+        const is_del = await deleteEquipment(key);
+        if (is_del)
+            await getEquipments(page);
+        else
             message.error('删除失败');
-        // const newData = data.filter((item) => item.key !== key);
-        // setData(newData);
-        // setEditingKey('');
     }
     async function changePage(pageNum) {
         setPage(pageNum);
-        // const equipmentList= await getEquipmentList(pageNum);
-        // setData(equipmentList);
+        const equipmentList = await getEquipmentList(pageNum);
+        setData(equipmentList);
     }
     const columns = [{
         title: '名称',
@@ -409,10 +357,7 @@ const Home = () => {
     {
         title: '类别',
         dataIndex: 'category',
-        filters: categories,
-        onFilter: (value, record) => {
-            return record.category === value
-        },
+        filters: categories.map((item) => { return { text: item, value: item } }),
         filterSearch: true,
         key: 'category',
         editable: true,
@@ -426,36 +371,31 @@ const Home = () => {
         title: '购入时间',
         dataIndex: 'buy_time',
         sorter: (a, b) => {
-            // 按照日期进行排序
             return a.buy_time - b.buy_time;
         },
         render: (buy_time) => {
-            return dayjs(buy_time).isValid()?dayjs(buy_time).format('YYYY-MM-DD'):'';
+            return dayjs(buy_time).isValid() ? dayjs(buy_time).format('YYYY-MM-DD') : '';
         },
         key: 'buy_time',
-        required:false,
+        required: false,
         editable: true,
     },
     {
         title: '当前使用者',
-        dataIndex: 'user',
-        filters: currentUsers,
-        onFilter: (value, record) => {
-            return record.user === value
-        },
+        dataIndex: 'username',
+        filters: userFilter,
         filterSearch: true,
-        key: 'user',
+        key: 'username',
         editable: false,
     }, {
         title: '领用时间',
         dataIndex: 'receive_time',
         key: 'receive_time',
         sorter: (a, b) => {
-            // 按照日期进行排序
             return a.receive_time - b.receive_time;
         },
-        render: (receive_time) => { 
-            return dayjs(receive_time).isValid()?dayjs(receive_time).format('YYYY-MM-DD'):''; 
+        render: (receive_time) => {
+            return dayjs(receive_time).isValid() ? dayjs(receive_time).format('YYYY-MM-DD') : '';
         },
         editable: false,
     }, {
@@ -472,63 +412,34 @@ const Home = () => {
                     return <Badge status="success" text="正在使用" />
             }
         },
-        filters: [
-            {
-                text: '正在使用',
-                value: 1,
-            },
-            {
-                text: '已报废',
-                value: 2,
-            },
-            {
-                text: '闲置',
-                value: 0,
-            },
-        ],
-        onFilter: (value, record) => {
-            console.log(record.state, 'record.state');
-            return record.state === value
-        },
+        filters: state,
         editable: true,
     }, {
         title: '位置',
         dataIndex: 'location',
         key: 'location',
-        filters: [
-            {
-                text: 'A栋',
-                value: 'A栋',
-            },
-            {
-                text: 'D栋',
-                value: 'D栋',
-            },
-        ],
-        onFilter: (value, record) => {
-            console.log(record.location, 'record.location');
-            return record.location === value
-        },
+        filters: locations.map((item) => { return { text: item, value: item } }),
         filterSearch: true,
         editable: true,
     }, {
         title: '配置',
         dataIndex: 'configuration',
+        required: false,
         key: 'configuration',
         editable: true,
     },
     {
         title: '照片',
-        dataIndex: 'photo',
-        key: 'photo',
-        render: photo => (
+        dataIndex: 'photo_url',
+        key: 'photo_url',
+        required: false,
+        render: photo_url => (
             <Image
                 width={100}
-                src={photo}
+                src={photo_url}
             />
         ),
         editable: true,
-        required:false
     },
     {
         title: '操作',
@@ -537,7 +448,6 @@ const Home = () => {
             const editable = isEditing(record);
             return is_manager === 1 ? editable ? (<span>
                 <a
-                    // href="javascript:;"
                     onClick={() => save(record.key)}
                     style={{
                         marginRight: 8,
@@ -549,57 +459,42 @@ const Home = () => {
                     <a>取消</a>
                 </Popconfirm>
             </span>) : (
-                <Row gutter={[16, 8]}>
-                    <Col span={24}>
+                <Row >
+                    <Col span={10}>
+                    
                         <Tag color={editingKey === '' ? 'green' : 'gray'} onClick={() => {
-                            setImgUrl('');
                             if (editingKey === '') {
                                 edit(record);
+                                record.photo_url ? setImgUrl(record.photo_url) : setImgUrl('');
                             }
                         }} >编辑</Tag>
                     </Col>
-                    <Col span={24}>
-                        <Popconfirm title="Sure to delete?" onConfirm={() => del(record.key)}>
+                    <Col span={10}>
+                        <Popconfirm title="确认删除？" onConfirm={() => del(record.key)}>
                             <Tag color="red" >删除</Tag>
                         </Popconfirm>
                     </Col>
                 </Row>
-            ) : (record.is_receive === 0 && record.user_id === user_id ?
-                <Row gutter={[16, 8]}>
-                    <Col span={24}>
-                        <Popconfirm title="确认领用？" onConfirm={() => receive(record.key)}>
-                            <Tag>领用</Tag>
-                        </Popconfirm>
-                    </Col>
-                </Row> : <Row gutter={[16, 8]}>
-                    <Col span={24}>
+            ) : (record.user_id === user_id ?
+                <Row gutter={[8, 8]}>
+                    <Col span={10}>
                         <Popconfirm title="确认归还？" onConfirm={() => restore(record.key)}>
-                            <Tag>归还</Tag>
+                            <Tag color="magenta" >归还</Tag>
                         </Popconfirm>
                     </Col>
-                </Row>
+                </Row> : (record.state===0?<Row gutter={[8, 8]}>
+                    <Col span={10}>
+                        <Popconfirm title="确认领用？" onConfirm={() => receive(record.key)}>
+                            <Tag color="geekblue">领用</Tag>
+                        </Popconfirm>
+                    </Col>
+                </Row>:<></>)
             );
         },
     }];
     const mergedColumns = columns.map((col) => {
         if (!col.editable) {
             return col;
-        }
-        const classfyInput = (dataIndex) => {
-            switch (dataIndex) {
-                case 'category':
-                    return 'selectCategory';
-                case 'location':
-                    return 'selectLocation';
-                case 'state':
-                    return 'selectState';
-                case 'buy_time':
-                    return 'DatePicker';
-                case 'photo':
-                    return 'upload';
-                default:
-                    return 'textArea';
-            }
         }
         return {
             ...col,
@@ -612,6 +507,41 @@ const Home = () => {
             }),
         };
     });
+    const onTableChange = async (pagination, filters, sorter) => {
+        try {
+            if (!filters.category && !filters.state && !filters.location && !filters.username) {
+                await getEquipments(page);
+            }
+            else {
+                var params = '';
+                if (filters.category) {
+                    filters.category.map((item) => {
+                        return params = params + 'categories=' + item + '&';
+                    })
+                }
+                if (filters.state) {
+                    filters.state.map((item) => {
+                        return params = params + 'states=' + item + '&';
+                    })
+                }
+                if (filters.location) {
+                    filters.location.map((item) => {
+                        return params = params + 'locations=' + item + '&';
+                    })
+                }
+                if (filters.username) {
+                    filters.username.map((item) => {
+                        return params = params + 'usernames=' + item + '&';
+                    })
+                }
+                params = params.slice(0, -1);
+                await getSelectList(pagination.current, params)
+
+            }
+        } catch (error) {
+            message.error('查询失败');
+        }
+    };
     return (
         <div className='home'>
             <Form form={form} component={false}>
@@ -637,6 +567,7 @@ const Home = () => {
                     }}
                     bordered
                     dataSource={data}
+                    onChange={onTableChange}
                     columns={mergedColumns}
                     rowClassName="editable-row"
                     pagination={{
