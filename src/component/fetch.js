@@ -2,7 +2,7 @@ import axios from 'axios';
 import { message } from 'antd';
 import dayjs from 'dayjs';
 // export const HOST = 'https://www.y-droid.com/feedback';
-export const HOST = 'http://10.177.44.94:9091';
+export const HOST = 'https://10.177.44.94:9091';
 const urlRegex = /page|querypage/;
 export default function fetch(option = {}) {
   const { url, byteResponse = false, id,...rest } = option;

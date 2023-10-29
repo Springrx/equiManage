@@ -117,8 +117,16 @@ const Home = () => {
             inputNode = <TextArea autoSize={{ minRows: 4, maxRows: 16 }} />;
         }
         else if (inputType === 'upload') {
+            const beforeUpload = (file) => {
+                const isLt2M = file.size / 1024 / 1024 <10 ;
+                if (!isLt2M) {
+                    message.error('图片大小不能超过10MB');
+                }
+                return isLt2M;
+            }
             const props = {
                 name: 'file',
+                beforeUpload:beforeUpload,
                 customRequest: async detail => {
                     setFile(detail.file);
                     const reader = new FileReader();
@@ -285,7 +293,6 @@ const Home = () => {
                 configuration: ''
             };
             setData([...data, newData]);
-            setEditingKey(newData.key);
             setNewEquipment(1);
         }
         else {
@@ -301,7 +308,7 @@ const Home = () => {
         });
         setEditingKey(record.key);
     };
-    const cancel = () => {
+    const cancel = () => {       
         if (newEquipment === 1) {
             setData(data.slice(0, data.length - 1));
         }
@@ -459,8 +466,8 @@ const Home = () => {
                     <a>取消</a>
                 </Popconfirm>
             </span>) : (
-                <Row >
-                    <Col span={10}>
+                <Row gutter={[16,8]}>
+                    <Col span={16}>
                     
                         <Tag color={editingKey === '' ? 'green' : 'gray'} onClick={() => {
                             if (editingKey === '') {
@@ -469,7 +476,7 @@ const Home = () => {
                             }
                         }} >编辑</Tag>
                     </Col>
-                    <Col span={10}>
+                    <Col span={16}>
                         <Popconfirm title="确认删除？" onConfirm={() => del(record.key)}>
                             <Tag color="red" >删除</Tag>
                         </Popconfirm>
