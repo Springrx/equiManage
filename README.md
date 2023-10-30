@@ -14,11 +14,9 @@
 
 # 开发
 1. 确认后端 server 服务启动
-2. 确认 src/component/fetch.js axios函数内的url字段(在第10或第11行)值为url，而不是`${HOST}${url}`
-3. `npm start`
+2. `npm start`
 
 # 部署
-1.  将 src/component/fetch.js axios函数内的url字段修改为`${HOST}${url}`
-2.  `npm run build`
-3.  将 build 产生的 dist 文件夹里的静态文件进行部署(ydroid 阿里云服务器 /var/www/userStudy 目录下)
-4.  将代码更新同步到 gitlab 中：`git push origin master`
+1.  `npm run build`
+2.  将 build 产生的 dist 文件夹里的静态文件进行部署(ydroid 阿里云服务器 /var/www/userStudy 目录下)
+3.  将代码更新同步到 gitlab 中：`git push origin master`

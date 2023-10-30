@@ -344,11 +344,15 @@ const Home = () => {
         }
     };
     async function del(key) {
-        const is_del = await deleteEquipment(key);
+        if(newEquipment){
+            setData(data.slice(0, data.length - 1));
+            setNewEquipment(0)
+        }
+        else  {const is_del = await deleteEquipment(key);
         if (is_del)
             await getEquipments(page);
         else
-            message.error('删除失败');
+            message.error('删除失败');}
     }
     async function changePage(pageNum) {
         setPage(pageNum);
@@ -360,11 +364,19 @@ const Home = () => {
         dataIndex: 'name',
         key: 'name',
         editable: true,
+        sorter:(a, b) => {
+            return a.name.localeCompare(b.name);
+        },
+        className:'dark'
     },
     {
         title: '类别',
         dataIndex: 'category',
+        className:'light',
         filters: categories.map((item) => { return { text: item, value: item } }),
+        sorter:(a, b) => {
+            return a.category.localeCompare(b.category);
+        },
         filterSearch: true,
         key: 'category',
         editable: true,
@@ -374,9 +386,14 @@ const Home = () => {
         dataIndex: 'number',
         key: 'number',
         editable: true,
+        sorter:(a, b) => {
+            return a.number.localeCompare(b.number);
+        },
+        className:'dark'
     }, {
         title: '购入时间',
         dataIndex: 'buy_time',
+        className:'light',
         sorter: (a, b) => {
             return a.buy_time - b.buy_time;
         },
@@ -392,11 +409,18 @@ const Home = () => {
         dataIndex: 'username',
         filters: userFilter,
         filterSearch: true,
+        sorter:(a, b) => {
+            if(!a.username) a.username='';
+            if(!b.username) b.username='';
+            return a.username.localeCompare(b.username);
+        },
         key: 'username',
         editable: false,
+        className:'dark'
     }, {
         title: '领用时间',
         dataIndex: 'receive_time',
+        className:'light',
         key: 'receive_time',
         sorter: (a, b) => {
             return a.receive_time - b.receive_time;
@@ -409,6 +433,10 @@ const Home = () => {
         title: '使用状态',
         dataIndex: 'state',
         key: 'state',
+        className:'dark',
+        sorter:(a, b) => {
+            return a.state-b.state;
+        },
         render: (state) => {
             switch (state) {
                 case 0:
@@ -424,7 +452,13 @@ const Home = () => {
     }, {
         title: '位置',
         dataIndex: 'location',
+        className:'light',
         key: 'location',
+        sorter:(a, b) => {
+            if(!a.location) a.location='';
+            if(!b.location) b.location='';
+            return a.location.localeCompare(b.location);
+        },
         filters: locations.map((item) => { return { text: item, value: item } }),
         filterSearch: true,
         editable: true,
@@ -433,6 +467,7 @@ const Home = () => {
         dataIndex: 'configuration',
         required: false,
         key: 'configuration',
+        className:'dark',
         editable: true,
     },
     {
@@ -447,10 +482,12 @@ const Home = () => {
             />
         ),
         editable: true,
+        className:'light',
     },
     {
         title: '操作',
         dataIndex: 'operation',
+        className:'dark',
         render: (text, record) => {
             const editable = isEditing(record);
             return is_manager === 1 ? editable ? (<span>
@@ -559,6 +596,7 @@ const Home = () => {
                                 <Button
                                     onClick={handleAdd}
                                     type="primary"
+                                    style={{backgroundColor:'#364A61',color:'white',fontWeight:'bolder'}}
                                 >
                                     添加设备
                                 </Button>
@@ -572,11 +610,16 @@ const Home = () => {
                             cell: EditableCell,
                         },
                     }}
-                    bordered
+                    bordered={false}
                     dataSource={data}
                     onChange={onTableChange}
                     columns={mergedColumns}
-                    rowClassName="editable-row"
+                    // rowClassName="editable-row"
+                    rowClassName={(record,index)=>{
+                        console.log(index,'index')
+                        let className=index%2?'deep':'shallow';
+                        return className
+                    }}
                     pagination={{
                         onChange: changePage,
                         pageSize: 10
