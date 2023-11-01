@@ -372,7 +372,7 @@ const Home = () => {
     {
         title: '类别',
         dataIndex: 'category',
-        className:'light',
+        className:'dark',
         filters: categories.map((item) => { return { text: item, value: item } }),
         sorter:(a, b) => {
             return a.category.localeCompare(b.category);
@@ -393,7 +393,7 @@ const Home = () => {
     }, {
         title: '购入时间',
         dataIndex: 'buy_time',
-        className:'light',
+        className:'dark',
         sorter: (a, b) => {
             return a.buy_time - b.buy_time;
         },
@@ -420,7 +420,7 @@ const Home = () => {
     }, {
         title: '领用时间',
         dataIndex: 'receive_time',
-        className:'light',
+        className:'dark',
         key: 'receive_time',
         sorter: (a, b) => {
             return a.receive_time - b.receive_time;
@@ -452,7 +452,7 @@ const Home = () => {
     }, {
         title: '位置',
         dataIndex: 'location',
-        className:'light',
+        className:'dark',
         key: 'location',
         sorter:(a, b) => {
             if(!a.location) a.location='';
@@ -482,7 +482,7 @@ const Home = () => {
             />
         ),
         editable: true,
-        className:'light',
+        className:'dark',
     },
     {
         title: '操作',
@@ -596,7 +596,7 @@ const Home = () => {
                                 <Button
                                     onClick={handleAdd}
                                     type="primary"
-                                    style={{backgroundColor:'#364A61',color:'white',fontWeight:'bolder'}}
+                                    style={{backgroundColor:'#36304A',color:'white',fontWeight:'bolder'}}
                                 >
                                     添加设备
                                 </Button>

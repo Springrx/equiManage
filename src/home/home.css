@@ -21,26 +21,31 @@
 
 .ant-table-thead>tr>th.dark {
   color: white !important;
-  background: #364A61 !important;
+  background: #36304A !important;
 }
 
-td.ant-table-cell.light.ant-table-column-sort {
+/* td.ant-table-cell.light.ant-table-column-sort {
   background-color: transparent;
-}
+} */
 
 td.ant-table-cell.dark.ant-table-column-sort {
   background-color: transparent;
 }
 
-.ant-table-thead>tr>th.light {
+/* .ant-table-thead>tr>th.light {
   color: white !important;
   background: #69C4A0 !important;
-}
+} */
 
 th.ant-table-cell.light::before {
   width: 0px !important;
 }
-
+.ant-table-column-sorter-inner{
+  color: white !important;
+}
+.anticon.anticon-filter{
+  color: white !important;
+}
 th.ant-table-cell.dark::before {
   width: 0px !important;
 }
