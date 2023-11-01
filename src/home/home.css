@@ -3,7 +3,7 @@
   text-align: center;
   width: 90%;
   margin-left: 5%;
-  padding-top: 5%;
+  padding-top: 40px;
 }
 
 /* .editable-row .ant-form-item-explain {
@@ -16,7 +16,7 @@
 }
 
 .deep {
-  background-color: #F8F8F8 !important;
+  background-color: rgb(245, 245, 245) !important;
 }
 
 .ant-table-thead>tr>th.dark {

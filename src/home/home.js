@@ -1,16 +1,16 @@
 import { Form, Image, Upload, Badge, DatePicker, Input, Popconfirm, Table, Select, Divider, Space, Row, Col, Tag, Tooltip, Button, message } from 'antd';
-import { PlusOutlined } from '@ant-design/icons';
+import { PlusOutlined,UploadOutlined } from '@ant-design/icons';
 import { useState, useRef, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import './home.css';
-import { state, classfyInput, selectStateOptions } from './config.js';
+import { state, classfyInput, selectStateOptions,fallback } from './config.js';
 import { updateEquipment, getSelectEquipments, addEquipment, uploadPhoto, getLocationsList, getEquipmentList, deleteEquipment, getCategoriesList, addCategory, getUsers, addLocation } from './service';
 import dayjs from 'dayjs';
 
 const { TextArea } = Input;
 const uploadButton = (
     <div>
-        <div style={{ marginTop: 8 }}>Upload</div>
+        <Button icon={<UploadOutlined />}>上传</Button>
     </div>
 );
 
@@ -114,7 +114,7 @@ const Home = () => {
         const locaInputRef = useRef(null);
         let inputNode = <Input />;
         if (inputType === 'textArea') {
-            inputNode = <TextArea autoSize={{ minRows: 4, maxRows: 16 }} />;
+            inputNode = <TextArea autoSize={{ minRows: 1, maxRows: 3 }} />;
         }
         else if (inputType === 'upload') {
             const beforeUpload = (file) => {
@@ -142,16 +142,15 @@ const Home = () => {
                 showUploadList: false,
                 fileList: [],
             };
-            inputNode = <Upload
-                {...props}
-                name="avatar"
-                listType="picture-card"
-                className="avatar-uploader"
-                showUploadList={false}
-            >
-                {imageUrl ? <img src={imageUrl} alt="avatar" style={{ width: '100%' }} /> : uploadButton}
-            </Upload>;
-        }
+            inputNode =<Upload
+            {...props}
+            name="avatar"
+            // listType="picture-card"
+            className="avatar-uploader"
+            showUploadList={false}
+        >
+            {imageUrl? <Image src={imageUrl} alt="avatar" style={{ width: '20px' }} />:uploadButton}           
+        </Upload>}
         else if (inputType === 'selectState') {
             inputNode = <Select
                 defaultValue="闲置"
@@ -359,6 +358,8 @@ const Home = () => {
         const equipmentList = await getEquipmentList(pageNum);
         setData(equipmentList);
     }
+
+
     const columns = [{
         title: '名称',
         dataIndex: 'name',
@@ -475,12 +476,27 @@ const Home = () => {
         dataIndex: 'photo_url',
         key: 'photo_url',
         required: false,
-        render: photo_url => (
-            <Image
-                width={100}
-                src={photo_url}
-            />
-        ),
+        render: photo_url => {
+
+            // return <div onClick={()=>{
+            //     viewImage(photo_url)
+            // }}> <FileImageOutlined /></div>
+            console.log(photo_url,'photo_url')
+           
+            // return photo_url?<Image
+            //     width={20}
+            //     src={photo_url}/>:
+            //     <Image
+            //     src="error"
+            //     width={20}
+            //     fallback={fallback}
+            // />
+            return <Image
+            width={20}
+            fallback={fallback}
+            src={photo_url}/>
+    
+        },
         editable: true,
         className:'dark',
     },
@@ -503,8 +519,8 @@ const Home = () => {
                     <a>取消</a>
                 </Popconfirm>
             </span>) : (
-                <Row gutter={[16,8]}>
-                    <Col span={16}>
+                <Row gutter={[8,8]}>
+                    <Col span={8}>
                     
                         <Tag color={editingKey === '' ? 'green' : 'gray'} onClick={() => {
                             if (editingKey === '') {
@@ -513,7 +529,7 @@ const Home = () => {
                             }
                         }} >编辑</Tag>
                     </Col>
-                    <Col span={16}>
+                    <Col span={8}>
                         <Popconfirm title="确认删除？" onConfirm={() => del(record.key)}>
                             <Tag color="red" >删除</Tag>
                         </Popconfirm>
